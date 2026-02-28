@@ -1,56 +1,131 @@
-# Bakong Ecommerce Backend (FastAPI + MongoDB + Bakong KHQR)
+# Bakong Shop Backend
 
-A production-style backend for an ecommerce website using:
+<p align="center">
+  <strong>Modern ecommerce backend for Cambodia, powered by FastAPI, MongoDB, Bakong KHQR, JWT auth, coupons, analytics, Telegram alerts, and reconciliation tools.</strong>
+</p>
 
-- FastAPI
-- MongoDB Atlas or local MongoDB
-- PyMongo AsyncMongoClient
-- JWT authentication
-- Role-based admin routes
-- Bakong KHQR + MD5 payment verification
-- Coupons
-- Analytics
+<p align="center">
+  <img alt="FastAPI" src="https://img.shields.io/badge/FastAPI-API-009688?style=for-the-badge&logo=fastapi&logoColor=white" />
+  <img alt="MongoDB" src="https://img.shields.io/badge/MongoDB-Database-47A248?style=for-the-badge&logo=mongodb&logoColor=white" />
+  <img alt="Python" src="https://img.shields.io/badge/Python-3.12+-3776AB?style=for-the-badge&logo=python&logoColor=white" />
+  <img alt="Bakong KHQR" src="https://img.shields.io/badge/Bakong-KHQR-orange?style=for-the-badge" />
+  <img alt="JWT" src="https://img.shields.io/badge/Auth-JWT-black?style=for-the-badge" />
+  <img alt="Telegram" src="https://img.shields.io/badge/Telegram-Notifications-26A5E4?style=for-the-badge&logo=telegram&logoColor=white" />
+</p>
+
+---
+
+## Overview
+
+**Bakong Shop Backend** is a production-style backend for an ecommerce platform that supports:
+
+- product catalog and inventory
+- customer authentication and role-based access
+- checkout with shipping information
+- Bakong KHQR generation and MD5 payment verification
+- coupon validation and discount tracking
+- admin dashboard and analytics APIs
 - Telegram payment notifications
-- Payment reconciliation
+- reconciliation for pending payments
+
+This project is designed for two audiences:
+
+- **Developers** who want a clean, scalable FastAPI backend
+- **Business owners / clients** who want a backend ready for ecommerce operations, payment tracking, and admin reporting
 
 ---
 
-## 1. Features
+## Why this project is useful
 
-### Public / User
-- Register and login
-- Browse products
-- Checkout with shipping address
-- Coupon validation
-- Bakong KHQR payment page
-- Payment status refresh
-- My orders
+### For developers
+- clean folder structure
+- service-based backend architecture
+- reusable auth and payment logic
+- modern async MongoDB connection with PyMongo AsyncMongoClient
+- Swagger docs out of the box
 
-### Admin
-- Dashboard stats
-- Product CRUD
-- Orders list
-- Payments list
-- Pending payments list
-- Coupon CRUD
-- Analytics endpoints
-- Manual reconciliation
-- Retry Telegram notification
+### For business / client teams
+- secure user and admin separation
+- product and order management
+- payment confirmation and monitoring
+- coupon campaigns and sales insights
+- operational alerts through Telegram
 
 ---
 
-## 2. Recommended stack
+## Key features
 
-- Python 3.12
-- FastAPI
-- PyMongo 4.16+
-- MongoDB Atlas with `mongodb+srv://`
-- Bakong KHQR package
-- HTTPX for Telegram notifications
+### Customer-facing
+- register and login
+- browse products
+- validate coupon codes
+- checkout with shipping address
+- pay with Bakong KHQR
+- refresh payment status
+- view personal order history
+
+### Admin-facing
+- dashboard statistics
+- product CRUD
+- order management
+- payment monitoring
+- coupon CRUD
+- analytics endpoints
+- reconciliation tool for pending payments
+- Telegram retry tools
 
 ---
 
-## 3. Project structure
+## Tech stack
+
+| Layer | Technology |
+|---|---|
+| API framework | FastAPI |
+| Language | Python 3.12+ |
+| Database | MongoDB |
+| Mongo driver | PyMongo 4.16+ AsyncMongoClient |
+| Auth | JWT |
+| Password hashing | pwdlib with Argon2 |
+| Payment | Bakong KHQR + MD5 verification |
+| HTTP client | HTTPX |
+| Notifications | Telegram Bot API |
+| Docs / testing | Swagger UI |
+
+---
+
+## Architecture at a glance
+
+```text
+Frontend (Next.js / mobile / web client)
+        |
+        v
+FastAPI API Layer
+  - auth routes
+  - product routes
+  - checkout routes
+  - payment routes
+  - admin routes
+        |
+        v
+Service Layer
+  - order service
+  - payment service
+  - coupon service
+  - bakong service
+  - telegram service
+        |
+        v
+MongoDB
+  - users
+  - products
+  - orders
+  - payments
+  - coupons
+```
+
+---
+
+## Project structure
 
 ```text
 backend/
@@ -95,9 +170,9 @@ backend/
 
 ---
 
-## 4. Create the backend project
+## Quick start
 
-### 4.1 Create virtual environment
+### 1) Create the project folder and virtual environment
 
 ```bash
 mkdir backend
@@ -105,7 +180,7 @@ cd backend
 python -m venv .venv
 ```
 
-### 4.2 Activate virtual environment
+### 2) Activate the virtual environment
 
 **Windows**
 ```bash
@@ -117,7 +192,7 @@ python -m venv .venv
 source .venv/bin/activate
 ```
 
-### 4.3 Install dependencies
+### 3) Install dependencies
 
 ```bash
 pip install -U pip
@@ -126,7 +201,7 @@ pip install -U "fastapi[standard]" "pymongo>=4.16" pydantic-settings python-dote
 pip install -U "bakong-khqr[image]" httpx "pwdlib[argon2]" PyJWT email-validator
 ```
 
-If you ever install plain `fastapi` instead of `fastapi[standard]`, also install:
+If you installed plain `fastapi` earlier, also install:
 
 ```bash
 pip install python-multipart
@@ -134,9 +209,9 @@ pip install python-multipart
 
 ---
 
-## 5. Environment variables
+## Environment configuration
 
-Create a `.env` file in the `backend/` folder:
+Create a `.env` file inside `backend/`.
 
 ```env
 APP_NAME=Ecommerce Bakong API
@@ -165,73 +240,84 @@ TELEGRAM_CHAT_ID=-1001234567890
 TELEGRAM_ENABLED=true
 ```
 
----
+### Environment variable notes
 
-## 6. How the backend works
-
-### 6.1 MongoDB connection
-- `app/db/mongodb.py` creates one shared `AsyncMongoClient` when the app starts
-- it selects `settings.mongodb_db`
-- it runs a `ping` command to verify the connection
-- it closes the client on shutdown
-
-### 6.2 Authentication
-- users register with username, full name, email, phone, and password
-- password is hashed before saving
-- login returns a JWT access token
-- admin routes require a valid token and `role = admin`
-
-### 6.3 Product flow
-- admin creates products
-- public users can list and view products
-
-### 6.4 Checkout flow
-1. user logs in or checks out as guest
-2. frontend sends cart items + shipping info
-3. backend calculates subtotal
-4. backend validates coupon if provided
-5. backend creates order
-6. backend creates Bakong KHQR + MD5
-7. backend creates payment document
-8. frontend shows QR code
-9. frontend polls payment status endpoint
-10. backend verifies payment by MD5
-11. backend marks order as paid
-12. backend deducts stock
-13. backend increments coupon usage
-14. backend sends Telegram notification
-
-### 6.5 Reconciliation flow
-- admin can run reconciliation manually
-- backend loads pending payments
-- expired payments are marked expired
-- remaining pending payments are checked in bulk by MD5
-- paid payments are finalized
+| Variable | Purpose |
+|---|---|
+| `MONGODB_URL` | MongoDB Atlas or local MongoDB connection string |
+| `BAKONG_TOKEN` | Bakong or RBK token used to generate QR and verify payments |
+| `BAKONG_ACCOUNT` | Merchant Bakong account receiving payments |
+| `AUTH_SECRET_KEY` | JWT signing secret |
+| `TELEGRAM_*` | Telegram bot alert configuration |
 
 ---
 
-## 7. Run the backend
+## Running the server
 
 ```bash
 fastapi dev app/main.py
 ```
 
-Or with uvicorn:
+Or with Uvicorn:
 
 ```bash
 uvicorn app.main:app --reload
 ```
 
-Server URLs:
+### Default local URLs
 - App root: `http://127.0.0.1:8000/`
-- Swagger docs: `http://127.0.0.1:8000/docs`
+- Swagger UI: `http://127.0.0.1:8000/docs`
 - OpenAPI JSON: `http://127.0.0.1:8000/openapi.json`
 
 ---
 
-## 8. First checks
+## How the backend works
 
-### 8.1 Root
+### 1) MongoDB connection
+- `app/db/mongodb.py` creates one shared async MongoDB client at startup
+- the app selects `settings.mongodb_db`
+- a `ping` check confirms the database is reachable
+- indexes are created when the app starts
+- the client is closed cleanly on shutdown
+
+### 2) Authentication
+- users register with username, name, email, phone, and password
+- passwords are hashed before saving
+- login returns a JWT access token
+- admin routes require a valid token and `role = admin`
+
+### 3) Product management
+- products are created and managed by admins
+- customers can list and view products publicly
+- stock is reduced only after successful payment
+
+### 4) Checkout and payment flow
+1. customer adds items to cart
+2. frontend sends checkout payload
+3. backend validates products and stock
+4. backend validates coupon if provided
+5. backend creates order document
+6. backend generates Bakong KHQR and MD5 hash
+7. backend creates payment document
+8. frontend shows QR and polls payment status
+9. backend verifies payment status with Bakong
+10. if paid, backend updates payment and order to `PAID`
+11. backend deducts stock
+12. backend increments coupon usage
+13. backend sends Telegram alert
+
+### 5) Reconciliation flow
+- used when a payment is still marked pending in the database
+- scans pending payments
+- marks expired payments
+- checks remaining payments in batches
+- finalizes paid payments
+
+---
+
+## First health checks
+
+### Root endpoint
 ```http
 GET /
 ```
@@ -244,7 +330,7 @@ Expected response:
 }
 ```
 
-### 8.2 Health
+### Health endpoint
 ```http
 GET /api/v1/health
 ```
@@ -260,26 +346,13 @@ Expected response:
 
 ---
 
-## 9. Authentication endpoints
+## Authentication guide
 
-## 9.1 Register user
-**Endpoint**
+### Register a user
 ```http
 POST /api/v1/auth/register
 ```
 
-**Body**
-```json
-{
-  "username": "davidqt",
-  "full_name": "David QT",
-  "email": "david@example.com",
-  "phone": "85512345678",
-  "password": "strongpassword123"
-}
-```
-
-**curl**
 ```bash
 curl -X POST "http://127.0.0.1:8000/api/v1/auth/register" \
   -H "Content-Type: application/json" \
@@ -292,24 +365,21 @@ curl -X POST "http://127.0.0.1:8000/api/v1/auth/register" \
   }'
 ```
 
----
-
-## 9.2 Login user
-**Endpoint**
+### Login
 ```http
 POST /api/v1/auth/login
 ```
 
-**Important:** login uses **form-data**, not JSON.
+> Important: login uses **form-data**, not JSON.
 
-**curl**
 ```bash
 curl -X POST "http://127.0.0.1:8000/api/v1/auth/login" \
   -H "Content-Type: application/x-www-form-urlencoded" \
   -d "username=davidqt&password=strongpassword123"
 ```
 
-**Example response**
+Expected response:
+
 ```json
 {
   "access_token": "YOUR_JWT_TOKEN",
@@ -317,26 +387,19 @@ curl -X POST "http://127.0.0.1:8000/api/v1/auth/login" \
 }
 ```
 
-Save that token for protected routes:
+Save the token:
 
+**Linux / macOS**
 ```bash
 export TOKEN="YOUR_JWT_TOKEN"
 ```
 
-**Windows PowerShell**
+**PowerShell**
 ```powershell
 $TOKEN="YOUR_JWT_TOKEN"
 ```
 
----
-
-## 9.3 Get current user
-**Endpoint**
-```http
-GET /api/v1/auth/me
-```
-
-**curl**
+### Current user profile
 ```bash
 curl "http://127.0.0.1:8000/api/v1/auth/me" \
   -H "Authorization: Bearer $TOKEN"
@@ -344,11 +407,10 @@ curl "http://127.0.0.1:8000/api/v1/auth/me" \
 
 ---
 
-## 10. Make first admin user
+## Make the first admin user
 
-After registration, users are created with `role = customer`.
-
-Promote one user manually in MongoDB shell:
+New users start with role `customer`.
+Promote one user manually in MongoDB:
 
 ```javascript
 db.users.updateOne(
@@ -357,35 +419,13 @@ db.users.updateOne(
 )
 ```
 
-Then login again to get a token with admin access.
+Then log in again to get a valid admin session token.
 
 ---
 
-## 11. Product endpoints
+## Product API
 
-## 11.1 Create product (Admin)
-**Endpoint**
-```http
-POST /api/v1/products
-```
-
-**Body**
-```json
-{
-  "name": "Book A",
-  "slug": "book-a",
-  "sku": "BOOK-A-001",
-  "description": "Demo product",
-  "price_minor": 9800,
-  "currency": "KHR",
-  "stock_qty": 10,
-  "images": [],
-  "category": "Books",
-  "is_active": true
-}
-```
-
-**curl**
+### Create product (admin)
 ```bash
 curl -X POST "http://127.0.0.1:8000/api/v1/products" \
   -H "Authorization: Bearer $TOKEN" \
@@ -404,37 +444,17 @@ curl -X POST "http://127.0.0.1:8000/api/v1/products" \
   }'
 ```
 
-Save the returned `id` as `PRODUCT_ID`.
-
----
-
-## 11.2 List products
-```http
-GET /api/v1/products
-```
-
+### List products
 ```bash
 curl "http://127.0.0.1:8000/api/v1/products"
 ```
 
----
-
-## 11.3 Get product by slug
-```http
-GET /api/v1/products/book-a
-```
-
+### Get product by slug
 ```bash
 curl "http://127.0.0.1:8000/api/v1/products/book-a"
 ```
 
----
-
-## 11.4 Update product
-```http
-PATCH /api/v1/products/{product_id}
-```
-
+### Update product
 ```bash
 curl -X PATCH "http://127.0.0.1:8000/api/v1/products/PRODUCT_ID" \
   -H "Authorization: Bearer $TOKEN" \
@@ -445,13 +465,7 @@ curl -X PATCH "http://127.0.0.1:8000/api/v1/products/PRODUCT_ID" \
   }'
 ```
 
----
-
-## 11.5 Delete product
-```http
-DELETE /api/v1/products/{product_id}
-```
-
+### Delete product
 ```bash
 curl -X DELETE "http://127.0.0.1:8000/api/v1/products/PRODUCT_ID" \
   -H "Authorization: Bearer $TOKEN"
@@ -459,15 +473,9 @@ curl -X DELETE "http://127.0.0.1:8000/api/v1/products/PRODUCT_ID" \
 
 ---
 
-## 12. Coupon endpoints
+## Coupon API
 
-## 12.1 Create coupon (Admin)
-**Endpoint**
-```http
-POST /api/v1/admin/coupons
-```
-
-**Percent coupon example**
+### Create a percent coupon (admin)
 ```bash
 curl -X POST "http://127.0.0.1:8000/api/v1/admin/coupons" \
   -H "Authorization: Bearer $TOKEN" \
@@ -483,7 +491,7 @@ curl -X POST "http://127.0.0.1:8000/api/v1/admin/coupons" \
   }'
 ```
 
-**Fixed coupon example**
+### Create a fixed coupon (admin)
 ```bash
 curl -X POST "http://127.0.0.1:8000/api/v1/admin/coupons" \
   -H "Authorization: Bearer $TOKEN" \
@@ -499,14 +507,7 @@ curl -X POST "http://127.0.0.1:8000/api/v1/admin/coupons" \
   }'
 ```
 
----
-
-## 12.2 Validate coupon
-**Endpoint**
-```http
-POST /api/v1/coupons/validate
-```
-
+### Validate coupon
 ```bash
 curl -X POST "http://127.0.0.1:8000/api/v1/coupons/validate" \
   -H "Content-Type: application/json" \
@@ -517,9 +518,7 @@ curl -X POST "http://127.0.0.1:8000/api/v1/coupons/validate" \
   }'
 ```
 
----
-
-## 12.3 List coupons (Admin)
+### List coupons (admin)
 ```bash
 curl "http://127.0.0.1:8000/api/v1/admin/coupons" \
   -H "Authorization: Bearer $TOKEN"
@@ -527,13 +526,9 @@ curl "http://127.0.0.1:8000/api/v1/admin/coupons" \
 
 ---
 
-## 13. Checkout and order endpoints
+## Checkout and order API
 
-## 13.1 Guest checkout
-```http
-POST /api/v1/orders/checkout
-```
-
+### Guest checkout
 ```bash
 curl -X POST "http://127.0.0.1:8000/api/v1/orders/checkout" \
   -H "Content-Type: application/json" \
@@ -563,9 +558,7 @@ curl -X POST "http://127.0.0.1:8000/api/v1/orders/checkout" \
   }'
 ```
 
----
-
-## 13.2 Logged-in checkout
+### Logged-in checkout with coupon
 ```bash
 curl -X POST "http://127.0.0.1:8000/api/v1/orders/checkout" \
   -H "Authorization: Bearer $TOKEN" \
@@ -592,28 +585,22 @@ curl -X POST "http://127.0.0.1:8000/api/v1/orders/checkout" \
   }'
 ```
 
-Save returned values:
+Save:
 - `order.id`
 - `payment.id`
 
----
-
-## 13.3 Get order by id
+### Get order by ID
 ```bash
 curl "http://127.0.0.1:8000/api/v1/orders/ORDER_ID"
 ```
 
----
-
-## 13.4 My orders list
+### User order list
 ```bash
 curl "http://127.0.0.1:8000/api/v1/orders/my-orders/list" \
   -H "Authorization: Bearer $TOKEN"
 ```
 
----
-
-## 13.5 My order detail
+### User order detail
 ```bash
 curl "http://127.0.0.1:8000/api/v1/orders/my-orders/ORDER_ID" \
   -H "Authorization: Bearer $TOKEN"
@@ -621,151 +608,121 @@ curl "http://127.0.0.1:8000/api/v1/orders/my-orders/ORDER_ID" \
 
 ---
 
-## 14. Payment endpoints
+## Payment API
 
-## 14.1 Get payment by id
+### Get payment by ID
 ```bash
 curl "http://127.0.0.1:8000/api/v1/payments/PAYMENT_ID"
 ```
 
----
-
-## 14.2 Check payment status
-This is the endpoint the frontend should poll every few seconds.
-
+### Check payment status
 ```bash
 curl "http://127.0.0.1:8000/api/v1/payments/PAYMENT_ID/status"
 ```
 
-Possible results:
+Typical statuses:
 - `PENDING`
 - `PAID`
 - `EXPIRED`
 - `FAILED`
 - `UNKNOWN`
 
----
-
-## 14.3 Manual refresh payment
+### Manual payment refresh
 ```bash
 curl -X POST "http://127.0.0.1:8000/api/v1/payments/PAYMENT_ID/refresh"
 ```
 
 ---
 
-## 15. Admin endpoints
+## Admin API
 
-All admin endpoints need an **admin token**.
+> All admin endpoints require an admin token.
 
-## 15.1 Dashboard stats
+### Dashboard stats
 ```bash
 curl "http://127.0.0.1:8000/api/v1/admin/dashboard/stats" \
   -H "Authorization: Bearer $TOKEN"
 ```
 
----
-
-## 15.2 Recent orders
+### Recent orders
 ```bash
 curl "http://127.0.0.1:8000/api/v1/admin/dashboard/recent-orders" \
   -H "Authorization: Bearer $TOKEN"
 ```
 
----
-
-## 15.3 Recent payments
+### Recent payments
 ```bash
 curl "http://127.0.0.1:8000/api/v1/admin/dashboard/recent-payments" \
   -H "Authorization: Bearer $TOKEN"
 ```
 
----
-
-## 15.4 Orders list
+### Orders list
 ```bash
 curl "http://127.0.0.1:8000/api/v1/admin/orders" \
   -H "Authorization: Bearer $TOKEN"
 ```
 
-Filter by status:
+### Orders filtered by status
 ```bash
 curl "http://127.0.0.1:8000/api/v1/admin/orders?status=PAID" \
   -H "Authorization: Bearer $TOKEN"
 ```
 
----
-
-## 15.5 Order detail
+### Order detail
 ```bash
 curl "http://127.0.0.1:8000/api/v1/admin/orders/ORDER_ID" \
   -H "Authorization: Bearer $TOKEN"
 ```
 
----
-
-## 15.6 Payments list
+### Payments list
 ```bash
 curl "http://127.0.0.1:8000/api/v1/admin/payments" \
   -H "Authorization: Bearer $TOKEN"
 ```
 
----
-
-## 15.7 Pending payments list
+### Pending payments
 ```bash
 curl "http://127.0.0.1:8000/api/v1/admin/payments/pending" \
   -H "Authorization: Bearer $TOKEN"
 ```
 
----
-
-## 15.8 Telegram failed notifications
+### Telegram failed notification list
 ```bash
 curl "http://127.0.0.1:8000/api/v1/admin/payments/telegram-failed" \
   -H "Authorization: Bearer $TOKEN"
 ```
 
----
-
-## 15.9 Retry Telegram notification
+### Retry Telegram notification
 ```bash
 curl -X POST "http://127.0.0.1:8000/api/v1/admin/payments/PAYMENT_ID/retry-telegram" \
   -H "Authorization: Bearer $TOKEN"
 ```
 
----
-
-## 15.10 Run reconciliation
+### Run reconciliation
 ```bash
 curl -X POST "http://127.0.0.1:8000/api/v1/admin/reconciliation/run?limit=100" \
   -H "Authorization: Bearer $TOKEN"
 ```
 
----
-
-## 15.11 Analytics: sales by day
+### Sales by day analytics
 ```bash
 curl "http://127.0.0.1:8000/api/v1/admin/analytics/sales-by-day?days=7" \
   -H "Authorization: Bearer $TOKEN"
 ```
 
-Optional currency filter:
+### Sales by day with currency filter
 ```bash
 curl "http://127.0.0.1:8000/api/v1/admin/analytics/sales-by-day?days=30&currency=KHR" \
   -H "Authorization: Bearer $TOKEN"
 ```
 
----
-
-## 15.12 Analytics: top products
+### Top products analytics
 ```bash
 curl "http://127.0.0.1:8000/api/v1/admin/analytics/top-products?days=30&limit=10" \
   -H "Authorization: Bearer $TOKEN"
 ```
 
----
-
-## 15.13 Analytics: coupon performance
+### Coupon performance analytics
 ```bash
 curl "http://127.0.0.1:8000/api/v1/admin/analytics/coupon-performance?days=30" \
   -H "Authorization: Bearer $TOKEN"
@@ -773,16 +730,16 @@ curl "http://127.0.0.1:8000/api/v1/admin/analytics/coupon-performance?days=30" \
 
 ---
 
-## 16. Recommended endpoint test order
+## Recommended test order
 
-Use this order so debugging is easier:
+Use this order for the smoothest testing experience:
 
 1. `GET /`
 2. `GET /api/v1/health`
 3. `POST /api/v1/auth/register`
 4. `POST /api/v1/auth/login`
 5. `GET /api/v1/auth/me`
-6. promote user to admin in MongoDB
+6. promote the user to admin in MongoDB
 7. login again
 8. `POST /api/v1/products`
 9. `GET /api/v1/products`
@@ -800,77 +757,78 @@ Use this order so debugging is easier:
 
 ---
 
-## 17. Telegram setup notes
+## Telegram setup notes
 
-To use Telegram notifications:
+To enable payment notifications:
+
 1. create a bot with `@BotFather`
-2. get your bot token
-3. add the bot to your chat/group/channel
-4. get the target chat id
+2. copy the bot token
+3. add the bot to your target chat, group, or channel
+4. get the chat ID
 5. set `TELEGRAM_ENABLED=true`
 
-If Telegram is disabled, payment success still works. Only the notification is skipped.
+If Telegram is disabled, payment processing still works. Only the notification step is skipped.
 
 ---
 
-## 18. Common problems and fixes
+## Common issues and fixes
 
-### Problem: `ImportError: AsyncMongoClient`
-Use modern PyMongo:
+### `ImportError: AsyncMongoClient`
+Install modern PyMongo only:
 
 ```bash
 pip uninstall -y motor pymongo bson
 pip install -U "pymongo>=4.16"
 ```
 
-### Problem: login endpoint returns form parsing error
+### Login form parsing error
 Install:
 
 ```bash
 pip install python-multipart
 ```
 
-### Problem: MongoDB Atlas connection fails
+### MongoDB Atlas connection fails
 Check:
-- username/password
-- IP allow list in Atlas
-- `mongodb+srv://` connection string
+- username and password
+- IP allow list
+- SRV URI format
 - database name in `.env`
 
-### Problem: Bakong payment always pending
+### Bakong payment always stays pending
 Check:
 - correct Bakong token
-- correct Bakong account
-- server location / RBK token rules
-- payment really completed in Bakong app
+- correct Bakong receiver account
+- RBK token or deployment location requirements
+- actual payment completion in the Bakong app
 
-### Problem: Telegram notification fails
+### Telegram notification fails
 Check:
 - bot token
-- chat id
-- bot is added to the target chat
-- bot has permission to send messages
+- chat ID
+- bot is inside the target chat
+- bot has message permissions
 
 ---
 
-## 19. Security notes
+## Security notes
 
-Before production, improve these areas:
-- add refresh tokens
-- add rate limiting for login and payment refresh
-- add stronger audit logs
-- add product image upload validation
-- add transaction-safe stock reservation if high traffic
-- protect all admin pages on frontend and backend
-- use HTTPS in production
+Before production, consider adding:
+
+- refresh tokens
+- login rate limiting
+- payment refresh rate limiting
+- audit logs
+- stronger inventory reservation / transaction strategy
+- HTTPS everywhere
+- stricter admin route protection
+- image upload validation and storage rules
 
 ---
 
-## 20. Frontend integration summary
+## Frontend integration summary
 
-Frontend should call these main endpoints:
-
-### Public / user
+### Customer / storefront
 - `GET /api/v1/products`
 - `GET /api/v1/products/{slug}`
 - `POST /api/v1/coupons/validate`
@@ -883,7 +841,7 @@ Frontend should call these main endpoints:
 - `GET /api/v1/orders/my-orders/list`
 - `GET /api/v1/orders/my-orders/{order_id}`
 
-### Admin
+### Admin dashboard
 - `GET /api/v1/admin/dashboard/stats`
 - `GET /api/v1/admin/orders`
 - `GET /api/v1/admin/payments`
@@ -897,6 +855,18 @@ Frontend should call these main endpoints:
 
 ---
 
-## 21. License / usage
+## Suggested next improvements
 
-This README is intended as a starter guide for your Bakong ecommerce backend project. Adjust route names, models, and validation rules as your project evolves.
+- add refresh-token flow
+- create Postman collection
+- add product image upload support
+- schedule reconciliation as a background worker or cron job
+- build admin charts in the frontend
+- add delivery status workflow
+- add customer profile update API
+
+---
+
+## License and usage
+
+Use this README as a starter for your own Bakong ecommerce backend project. Adapt naming, routes, and business rules to match your final product requirements.
